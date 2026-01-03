@@ -1,0 +1,493 @@
+/* =========================================
+   STYLE.CSS - LUXURY GLASS THEME (FIXED)
+========================================= */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+:root {
+    /* Glassmorphism Variables */
+    --glass-bg: rgba(255, 255, 255, 0.7);
+    --glass-border: rgba(255, 255, 255, 0.5);
+    --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+    
+    /* Colors */
+    --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --accent-color: #764ba2;
+    --text-main: #2d3748;
+    --text-muted: #718096;
+    
+    /* Status Colors */
+    --danger: #ff4757;
+    --warning: #ffa502;
+    --success: #2ed573;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
+}
+
+body {
+    /* Background Animasi Mewah */
+    background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+    background-size: 400% 400%;
+    animation: gradientBG 15s ease infinite;
+    color: var(--text-main);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+@keyframes gradientBG {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* --- UTILITIES --- */
+.glass-panel {
+    background: var(--glass-bg);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--glass-border);
+    border-radius: 24px;
+    box-shadow: var(--glass-shadow);
+}
+
+/* --- NAVIGATION --- */
+.dashboard-header {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(10px);
+    padding: 1rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+}
+
+.dashboard-header h3 a {
+    font-weight: 800;
+    font-size: 1.5rem;
+    background: var(--primary-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: 1px;
+}
+
+.logout-btn {
+    background: white;
+    padding: 8px 20px;
+    border-radius: 50px;
+    font-weight: 600;
+    color: var(--danger);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+}
+
+.logout-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+}
+
+/* --- MAIN LAYOUT --- */
+.dashboard-content {
+    padding: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+    width: 100%;
+    flex: 1;
+}
+
+/* --- BUTTONS & INPUTS GLOBAL --- */
+.btn-primary {
+    background: var(--primary-gradient);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 4px 15px rgba(118, 75, 162, 0.4);
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(118, 75, 162, 0.6);
+}
+
+input, select {
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.9);
+    transition: 0.3s;
+    width: 100%;
+}
+
+input:focus, select:focus {
+    border-color: var(--accent-color);
+    outline: none;
+    background: white;
+}
+
+/* --- AUTH PAGE (LOGIN) --- */
+.auth-page {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.auth-card {
+    background: rgba(255, 255, 255, 0.9);
+    padding: 3rem;
+    border-radius: 24px;
+    width: 400px;
+    text-align: center;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+}
+
+.auth-card h1 {
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+    background: var(--primary-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.auth-card .subtitle {
+    margin-bottom: 2rem;
+    color: var(--text-muted);
+}
+
+/* --- DASHBOARD HERO SECTION --- */
+.hero-section {
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 24px;
+    padding: 2.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 3rem;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.1);
+    position: relative;
+    overflow: hidden;
+}
+
+.hero-left h1 {
+    font-size: 4rem;
+    font-weight: 700;
+    color: var(--text-main);
+    line-height: 1;
+}
+
+.glass-box {
+    background: var(--primary-gradient);
+    padding: 20px;
+    border-radius: 20px;
+    color: white;
+    min-width: 280px;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(118, 75, 162, 0.4);
+}
+
+/* --- MENU GRID --- */
+.menu-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 2rem;
+}
+
+.menu-card {
+    background: rgba(255, 255, 255, 0.9);
+    padding: 2rem;
+    border-radius: 24px;
+    text-align: center;
+    text-decoration: none;
+    color: var(--text-main);
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    border: 1px solid rgba(255,255,255,0.5);
+}
+
+.menu-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+    background: white;
+}
+
+.menu-card i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    background: var(--primary-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+/* --- TASKS PAGE STYLES --- */
+.task-header-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    color: white;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.task-input-card {
+    background: rgba(255, 255, 255, 0.9);
+    padding: 1.5rem;
+    border-radius: 24px;
+    margin-bottom: 2rem;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr auto;
+    gap: 15px;
+}
+
+.task-controls {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.search-box input {
+    border-radius: 50px;
+    padding-left: 40px;
+}
+.search-box i {
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #aaa;
+}
+.search-box { position: relative; flex: 1; }
+
+.filter-buttons button {
+    background: rgba(255,255,255,0.8);
+    border: none;
+    padding: 8px 16px;
+    border-radius: 20px;
+    margin-left: 5px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: 0.3s;
+}
+
+.filter-buttons button.active, .filter-buttons button:hover {
+    background: var(--accent-color);
+    color: white;
+    box-shadow: 0 4px 10px rgba(118, 75, 162, 0.3);
+}
+
+/* Task List Item */
+.task-item {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 16px;
+    padding: 1.2rem;
+    margin-bottom: 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    transition: 0.3s;
+    border-left: 6px solid #ccc;
+}
+
+.task-item:hover {
+    transform: translateX(5px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+}
+
+.task-item.completed {
+    opacity: 0.6;
+    background: rgba(255, 255, 255, 0.6);
+}
+
+/* Priorities Colors */
+.task-item[data-priority="High"] { border-left-color: var(--danger); }
+.task-item[data-priority="Medium"] { border-left-color: var(--warning); }
+.task-item[data-priority="Low"] { border-left-color: var(--success); }
+
+.badge {
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+.badge-High { background: #ffe5e7; color: var(--danger); }
+.badge-Medium { background: #fff4d9; color: var(--warning); }
+.badge-Low { background: #dbfbee; color: var(--success); }
+
+/* Task Actions */
+.task-actions button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.2rem;
+    padding: 5px;
+    margin-left: 8px;
+    transition: 0.2s;
+}
+.task-actions button:hover { transform: scale(1.2); }
+
+/* --- CALENDAR PAGE --- */
+.calendar-wrapper {
+    background: white;
+    padding: 2rem;
+    border-radius: 24px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+}
+.fc-toolbar-title { font-weight: 700 !important; color: var(--text-main); }
+.fc-button-primary { background: var(--primary-gradient) !important; border: none !important; }
+.fc-event { border: none !important; padding: 3px 6px; border-radius: 6px; cursor: pointer; }
+
+/* --- CHATBOT PAGE --- */
+.chat-layout {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 85vh;
+}
+
+.chat-container {
+    background: rgba(255, 255, 255, 0.95);
+    width: 100%;
+    max-width: 500px;
+    height: 650px;
+    border-radius: 24px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.chat-header {
+    background: var(--primary-gradient);
+    color: white;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.bot-avatar {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    background: rgba(255,255,255,0.2);
+}
+
+.chat-messages {
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+    background: #f8fafc;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.msg-bubble {
+    padding: 12px 18px;
+    border-radius: 18px;
+    max-width: 80%;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+.bot-msg { justify-content: flex-start; }
+.bot-msg .msg-bubble { background: white; color: var(--text-main); border-top-left-radius: 4px; }
+
+.user-msg { justify-content: flex-end; }
+.user-msg .msg-bubble { background: var(--primary-gradient); color: white; border-top-right-radius: 4px; }
+
+.chat-input-area {
+    padding: 15px;
+    background: white;
+    border-top: 1px solid #eee;
+    display: flex;
+    gap: 10px;
+}
+.send-btn {
+    background: var(--primary-gradient);
+    color: white;
+    border: none;
+    width: 50px;
+    border-radius: 12px;
+    cursor: pointer;
+    font-size: 1.2rem;
+}
+
+/* --- ABOUT PAGE (PROFILE) --- */
+.profile-card {
+    background: rgba(255, 255, 255, 0.95);
+    width: 100%;
+    max-width: 450px;
+    border-radius: 24px;
+    overflow: hidden;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+    text-align: center;
+}
+
+.profile-banner {
+    height: 140px;
+    background: var(--primary-gradient);
+}
+
+.profile-img-container { margin-top: -70px; margin-bottom: 1rem; }
+.profile-img {
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    border: 6px solid white;
+    background: white;
+}
+
+.profile-body { padding: 0 2rem 2rem; }
+.social-links { display: flex; justify-content: center; gap: 15px; margin-bottom: 20px; }
+
+/* FIXING BUTTON ICONS POSITION */
+.social-btn {
+    width: 45px; height: 45px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center; /* FIXED CSS SYNTAX */
+    color: white; text-decoration: none;
+    font-size: 1.2rem;
+    transition: transform 0.2s;
+}
+.social-btn:hover { transform: scale(1.1); }
+
+.instagram { background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888); }
+.github { background: #333; }
+.linkedin { background: #0077b5; }
+.email { background: #ea4335; }
+
+.skills-list { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; margin: 15px 0; }
+.skill-badge { background: #edf2f7; padding: 6px 12px; border-radius: 20px; font-size: 0.8rem; color: #4a5568; }
+
+/* --- RESPONSIVE --- */
+@media (max-width: 768px) {
+    .hero-section { flex-direction: column; text-align: center; gap: 20px; }
+    .glass-box { width: 100%; }
+    .auth-card { width: 90%; padding: 2rem; }
+    .form-grid { grid-template-columns: 1fr; }
+    .chat-container { height: 100vh; border-radius: 0; }
+    .chat-layout { height: auto; align-items: stretch; }
+}

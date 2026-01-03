@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome • MyTracker</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body class="auth-page">
+
+    <div class="auth-card glass-panel">
+        <h1 style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 800; margin-bottom: 5px;">
+            MyTracker
+        </h1>
+        <p class="subtitle">Kelola tugas. Atur waktu. Lebih produktif.</p>
+
+        <form id="loginForm" style="margin-top: 2rem;">
+            <div style="margin-bottom: 1rem; position: relative;">
+                <input type="text" id="username" placeholder="Username" required style="padding-left: 15px;">
+            </div>
+            
+            <div style="margin-bottom: 1.5rem; position: relative;">
+                <input type="password" id="password" placeholder="Password" required style="padding-left: 15px;">
+            </div>
+
+            <button type="submit" class="btn-primary" style="width: 100%; padding: 15px; font-size: 1.1rem; box-shadow: 0 10px 20px rgba(118, 75, 162, 0.3);">
+                Masuk Dashboard <i class="fas fa-arrow-right" style="margin-left: 5px;"></i>
+            </button>
+        </form>
+
+        <p id="errorMsg" style="color: #ff4757; margin-top: 15px; font-size: 0.9rem; font-weight: 500;"></p>
+        
+        <div style="margin-top: 2rem; border-top: 1px solid rgba(0,0,0,0.05); padding-top: 1rem;">
+            <small style="color: #a0aec0;">© 2026 MyTracker Inc.</small>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

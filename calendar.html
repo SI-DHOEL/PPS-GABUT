@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kalender Mewah - MyTracker</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js'></script>
+</head>
+<body>
+
+    <nav class="dashboard-header">
+        <h3><a href="dashboard.html" style="text-decoration:none; color:inherit;">🚀 MyTracker</a> / Calendar</h3>
+        <span class="logout-btn" onclick="logout()">Logout</span>
+    </nav>
+
+    <div class="dashboard-content">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
+            <div class="glass-panel" style="padding: 1rem 2rem; color: #333;">
+                <h2 style="font-weight: 700; color: #764ba2;">Agenda Akademik</h2>
+                <p style="opacity: 0.7;">Jangan sampai ada deadline yang terlewat!</p>
+            </div>
+            
+            <div class="glass-panel" style="padding: 0.8rem 1.5rem; display: flex; gap: 10px;">
+                <span class="badge badge-High">High 🔥</span>
+                <span class="badge badge-Medium">Medium ⚡</span>
+                <span class="badge badge-Low">Low ☕</span>
+            </div>
+        </div>
+
+        <div class="calendar-wrapper">
+            <div id='calendar'></div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+        checkAuth();
+
+        document.addEventListener('DOMContentLoaded', function() {
+            var calendarEl = document.getElementById('calendar');
+            
+            // 1. AMBIL DATA DARI LOCAL STORAGE
+            const tasks = JSON.parse(localStorage.getItem('myTasks') || "[]");
+
+            // 2. MAPPING DATA SUPAYA DIMENGERTI FULLCALENDAR
+            // FullCalendar butuh format: { title: '...', start: 'YYYY-MM-DD', backgroundColor: '...' }
+            const events = tasks.map(task => {
+                let color = '#2ed573'; // Default Hijau (Low)
+                if(task.priority === 'High') color = '#ff4757'; // Merah
+                if(task.priority === 'Medium') color = '#ffa502'; // Orange
+                if(task.completed) color = '#a4b0be'; // Abu-abu kalau selesai
+
+                return {
+                    title: task.name,
+                    start: task.date, // Pastikan format di LS adalah YYYY-MM-DD
+                    backgroundColor: color,
+                    borderColor: color,
+                    allDay: true,
+                    extendedProps: {
+                        status: task.completed ? 'Selesai' : 'Belum'
+                    }
+                };
+            });
+
+            // 3. RENDER KALENDER
+            var calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'dayGridMonth',
+                locale: 'id', // Bahasa Indonesia
+                headerToolbar: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'dayGridMonth,listWeek'
+                },
+                buttonText: {
+                    today: 'Hari Ini',
+                    month: 'Bulan',
+                    list: 'List Mingguan'
+                },
+                events: events,
+                eventClick: function(info) {
+                    alert('Tugas: ' + info.event.title + '\nStatus: ' + info.event.extendedProps.status);
+                },
+                height: 'auto',
+                contentHeight: 600
+            });
+
+            calendar.render();
+        });
+    </script>
+</body>
+</html>
