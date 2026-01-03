@@ -1,13 +1,13 @@
-/* =========================================
-   SCRIPT.JS - CLOUD SYNC EDITION (JARVIS PACAR) 😘
+/* ========================================
+   SCRIPT.JS - ULTIMATE WEB CLIENT 🌐
    Fitur:
    1. Koneksi ke Google Sheet (Database Pusat)
-   2. Sync Otomatis 2 Arah (Web <-> HP)
-   3. Mode Pacar Tetap Jalan
+   2. Sync Realtime (Web <-> Telegram)
+   3. Mode Pacar (Notif Manja)
 ========================================= */
 
-// --- KONFIGURASI SERVER (GOOGLE APPS SCRIPT) ---
-// URL ini didapat dari deployment GAS kamu tadi
+// --- KONFIGURASI SERVER ---
+// ⚠️ GANTI URL INI DENGAN URL DEPLOYMENT GOOGLE APPS SCRIPT BARU KAMU!
 const GAS_URL = "https://script.google.com/macros/s/AKfycbzIA9HgAreYkZqj_GChSQ1AdgsIJ2DkBgEYu88AFfoGlVJlSvOMbwmZh4qOMGsWB8Fg/exec";
 
 // --- KONFIGURASI TELEGRAM (Untuk Notif Instan dari Web) ---
@@ -94,7 +94,7 @@ async function syncFromServer() {
         // Kita hanya ambil properti yang penting untuk dibandingkan
         const cloudStr = JSON.stringify(cloudTasks);
         
-        // Jika data berbeda dan data server tidak kosong
+        // Jika data berbeda dan data server valid
         if (localStr !== cloudStr && Array.isArray(cloudTasks)) {
             console.log("🔄 Sinkronisasi data baru dari server...");
             localStorage.setItem("myTasks", cloudStr);
@@ -102,7 +102,8 @@ async function syncFromServer() {
             if(typeof updateProgress === 'function') updateProgress();
         }
     } catch (e) {
-        // Silent error biar console gak merah kalau internet putus
+        // Silent error biar console gak merah kalau internet putus/server sibuk
+        console.log("Sync skipped (Network/Server Busy)");
     }
 }
 
