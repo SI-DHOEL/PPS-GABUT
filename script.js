@@ -1,21 +1,19 @@
-/* ========================================
-   SCRIPT.JS - ULTIMATE WEB CLIENT 🌐
+/* =========================================
+   SCRIPT.JS - ULTIMATE JALUR DARAT (V3) 🚜
    Fitur:
-   1. Koneksi ke Google Sheet (Database Pusat)
-   2. Sync Realtime (Web <-> Telegram)
-   3. Mode Pacar (Notif Manja)
+   1. Anti-Spam Telegram (ID Filtering)
+   2. Chatbot Web Pinter (Sapaan Waktu & Menu Lengkap)
+   3. Auto Reminder & LocalStorage
 ========================================= */
 
-// --- KONFIGURASI SERVER ---
-// ⚠️ GANTI URL INI DENGAN URL DEPLOYMENT GOOGLE APPS SCRIPT BARU KAMU!
-const GAS_URL = "https://script.google.com/macros/s/AKfycbzIA9HgAreYkZqj_GChSQ1AdgsIJ2DkBgEYu88AFfoGlVJlSvOMbwmZh4qOMGsWB8Fg/exec";
-
-// --- KONFIGURASI TELEGRAM (Untuk Notif Instan dari Web) ---
+/* -----------------------------------------
+   ⚠️ KONFIGURASI TELEGRAM ⚠️
+   ----------------------------------------- */
 const TELEGRAM_TOKEN = "8581333428:AAFoab8W32zdKSKn4-NVI5WjRz0YCHH0vSE"; 
 const CHAT_ID = "8400553086"; 
 
 /* =========================================
-   1. AUTHENTICATION
+   1. AUTHENTICATION & LOGIN
 ========================================= */
 const VALID_USER = "admin";
 const VALID_PASS = "12345";
@@ -51,60 +49,16 @@ function logout() {
 }
 
 /* =========================================
-   2. DATA MANAGEMENT (CLOUD SYNC)
+   2. DATA MANAGEMENT (CORE)
 ========================================= */
 function getTasks() {
     return JSON.parse(localStorage.getItem("myTasks") || "[]");
 }
 
-// Fungsi Simpan: Save Lokal + Kirim ke Server Google
 function saveTasks(tasks) {
     localStorage.setItem("myTasks", JSON.stringify(tasks));
     if(typeof renderTasks === 'function') renderTasks();
     if(typeof updateProgress === 'function') updateProgress();
-    
-    // Kirim data terbaru ke Google Sheet (Background Process)
-    uploadToServer(tasks);
-}
-
-// --- FUNGSI SYNC KE SERVER (UPLOAD) ---
-async function uploadToServer(tasks) {
-    try {
-        await fetch(GAS_URL, {
-            method: "POST",
-            mode: "no-cors", // Mode ini penting agar browser tidak memblokir request ke Google
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ action: "sync", tasks: tasks })
-        });
-        console.log("✅ Data tersimpan di Awan Google!");
-    } catch (e) {
-        console.error("Gagal upload:", e);
-    }
-}
-
-// --- FUNGSI AMBIL DARI SERVER (DOWNLOAD) ---
-// Ini yang bikin tugas dari HP muncul di Web
-async function syncFromServer() {
-    try {
-        const response = await fetch(GAS_URL);
-        const cloudTasks = await response.json();
-        
-        // Cek apakah data server beda dengan lokal?
-        const localStr = localStorage.getItem("myTasks") || "[]";
-        // Kita hanya ambil properti yang penting untuk dibandingkan
-        const cloudStr = JSON.stringify(cloudTasks);
-        
-        // Jika data berbeda dan data server valid
-        if (localStr !== cloudStr && Array.isArray(cloudTasks)) {
-            console.log("🔄 Sinkronisasi data baru dari server...");
-            localStorage.setItem("myTasks", cloudStr);
-            if(typeof renderTasks === 'function') renderTasks();
-            if(typeof updateProgress === 'function') updateProgress();
-        }
-    } catch (e) {
-        // Silent error biar console gak merah kalau internet putus/server sibuk
-        console.log("Sync skipped (Network/Server Busy)");
-    }
 }
 
 // --- FUNGSI KIRIM TELEGRAM (SENDER) ---
@@ -112,13 +66,11 @@ async function sendTelegramAlert(rawMessage) {
     if (!TELEGRAM_TOKEN || !CHAT_ID) return;
     const text = encodeURIComponent(rawMessage);
     const url = `https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage?chat_id=${CHAT_ID}&text=${text}&parse_mode=HTML`;
-    try { await fetch(url); } catch (e) {}
+    try { await fetch(url); } catch (e) { console.error("Gagal kirim TG:", e); }
 }
 
-/* =========================================
-   3. TASK LOGIC (CRUD)
-========================================= */
-function addTask(name, date, priority) {
+// --- FUNGSI TAMBAH TUGAS ---
+function addTask(name, date, priority, fromTelegram = false) {
     const tasks = getTasks();
     const now = Date.now();
     
@@ -133,24 +85,272 @@ function addTask(name, date, priority) {
     };
     
     tasks.push(newTask);
-    // Simpan & Upload ke Google
-    saveTasks(tasks); 
+    saveTasks(tasks);
 
-    // Notif Instan Mode Pacar
-    const deadlineStr = new Date(date).toLocaleString('id-ID', {weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'});
-    const msg = `
-🆕 <b>SAYANG, ADA TUGAS BARU NIH!</b>
-
-📝 Tugas: <b>${name}</b>
-📅 Deadline: ${deadlineStr}
-⚡ Priority: ${priority}
-
-Semangat ngerjainnya ya ganteng! Jangan ditunda-tunda lho. Love you! 😘❤️
-    `.trim();
-    sendTelegramAlert(msg);
+    // Notif balik ke Telegram (hanya kalau input manual dr web)
+    if (!fromTelegram) {
+        const deadlineStr = new Date(date).toLocaleString('id-ID', {weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'});
+        const msg = `🆕 <b>TUGAS DICATAT SAYANG!</b>\n\n📝 <b>${name}</b>\n📅 ${deadlineStr}\n⚡ ${priority}\n\nSemangat ngerjainnya! Muach! 😘`;
+        sendTelegramAlert(msg);
+    }
 }
 
-// --- EVENT LISTENER HALAMAN TASKS ---
+/* =========================================
+   3. TELEGRAM RECEIVER (ANTI-SPAM SYSTEM) 🔥
+   Menangkap chat dari Telegram -> Masuk Web
+========================================= */
+let lastUpdateId = parseInt(localStorage.getItem("tg_last_update") || "0");
+
+async function pollTelegramMessages() {
+    const url = `https://api.telegram.org/bot${TELEGRAM_TOKEN}/getUpdates?offset=${lastUpdateId + 1}&timeout=0`;
+
+    try {
+        const response = await fetch(url);
+        const data = await response.json();
+
+        if (data.ok && data.result.length > 0) {
+            // Ambil daftar ID pesan yang sudah diproses biar gak double
+            let processedIds = JSON.parse(localStorage.getItem("processed_msg_ids") || "[]");
+
+            data.result.forEach(update => {
+                // Update Offset biar server tau kita udah baca
+                if (update.update_id > lastUpdateId) {
+                    lastUpdateId = update.update_id;
+                    localStorage.setItem("tg_last_update", lastUpdateId);
+                }
+
+                if (update.message && update.message.chat.id.toString() === CHAT_ID) {
+                    const msgId = update.message.message_id;
+
+                    // 🔥 FILTER ANTI SPAM: Cek apakah pesan ini udah diproses?
+                    if (processedIds.includes(msgId)) {
+                        return; // SKIP
+                    }
+
+                    // Proses Pesan
+                    processTelegramText(update.message.text);
+
+                    // Catat ID pesan ini sebagai "Sudah Diproses"
+                    processedIds.push(msgId);
+                    // Batasi memori cuma simpan 50 pesan terakhir biar gak berat
+                    if (processedIds.length > 50) processedIds.shift();
+                    localStorage.setItem("processed_msg_ids", JSON.stringify(processedIds));
+                }
+            });
+        }
+    } catch (e) { /* Silent error */ }
+}
+
+function processTelegramText(text) {
+    const lower = text.toLowerCase();
+    if (!lower.match(/tugas|ingetin|catet|pr|deadline/)) return;
+
+    let priority = "Medium";
+    if (lower.match(/penting|urgent|parah|high/)) priority = "High";
+    else if (lower.match(/santai|gampang|low/)) priority = "Low";
+
+    // Logika Tanggal Pintar
+    let date = new Date();
+    let dateSet = false;
+
+    if (lower.includes("besok")) { date.setDate(date.getDate() + 1); dateSet = true; }
+    else if (lower.includes("lusa")) { date.setDate(date.getDate() + 2); dateSet = true; }
+    
+    const tglMatch = lower.match(/(?:tanggal\s+|tgl\s+)?(\d{1,2})\s*([a-z]+)?/);
+    if (tglMatch && !dateSet) {
+        const tgl = parseInt(tglMatch[1]);
+        const blnStr = tglMatch[2];
+        const bulanIndo = {"januari":0,"jan":0,"februari":1,"feb":1,"maret":2,"mar":2,"april":3,"apr":3,"mei":4,"juni":5,"jun":5,"juli":6,"jul":6,"agustus":7,"agus":7,"september":8,"sep":8,"oktober":9,"okt":9,"november":10,"nov":10,"desember":11,"des":11};
+        
+        if (tgl >= 1 && tgl <= 31) {
+            date.setDate(tgl);
+            if (blnStr && bulanIndo.hasOwnProperty(blnStr)) {
+                date.setMonth(bulanIndo[blnStr]);
+                const now = new Date();
+                if (date.getMonth() < now.getMonth() && date.getFullYear() === now.getFullYear()) {
+                    date.setFullYear(date.getFullYear() + 1);
+                }
+            } else if (tgl < new Date().getDate()) {
+                date.setMonth(date.getMonth() + 1);
+            }
+        }
+    }
+
+    const jamMatch = lower.match(/jam\s?(\d{1,2})([.:](\d{2}))?/);
+    if (jamMatch) {
+        let jam = parseInt(jamMatch[1]);
+        let menit = jamMatch[3] ? parseInt(jamMatch[3]) : 0;
+        if ((lower.includes("siang") || lower.includes("sore")) && jam < 12) jam += 12;
+        if (lower.includes("malam")) { if (jam === 12) jam = 0; else if (jam < 12) jam += 12; }
+        date.setHours(jam, menit, 0, 0);
+    } else {
+        date.setHours(23, 59, 59);
+    }
+
+    const offset = date.getTimezoneOffset() * 60000;
+    const localISOTime = new Date(date.getTime() - offset).toISOString().slice(0, 16);
+
+    let cleanName = text.replace(/tolong|dong|tugas|ingetin|catet|pr|besok|lusa|jam\s?\d+|pagi|siang|sore|malam|penting|urgent|tanggal\s?\d+/gi, "").replace(/[,.-]/g, "").trim();
+    if (cleanName.length < 2) cleanName = "Tugas Dari Telegram";
+    else cleanName = cleanName.charAt(0).toUpperCase() + cleanName.slice(1);
+
+    addTask(cleanName, localISOTime, priority, true);
+
+    const deadlineStr = date.toLocaleString('id-ID', {weekday:'short', day:'numeric', month:'short', hour:'2-digit', minute:'2-digit'});
+    sendTelegramAlert(`🤖 <b>SIAP LUR!</b>\n\n✅ <b>${cleanName}</b> udah dicatet.\n📅 Deadline: ${deadlineStr}\n\nJangan lupa dikerjain ya! 👍`);
+}
+
+/* =========================================
+   4. CHATBOT WEB LOGIC 🤖 (SUPER INTERAKTIF)
+========================================= */
+const chatBox = document.getElementById('chat-box');
+const chatBody = document.getElementById('chat-body');
+const chatInput = document.getElementById('chat-input');
+const toggleBtn = document.getElementById('chat-toggle-btn');
+const closeBtn = document.getElementById('chat-close-btn');
+const sendBtn = document.getElementById('chat-send-btn');
+
+// --- Greeting Sesuai Jam ---
+function getGreeting() {
+    const hour = new Date().getHours();
+    if (hour < 11) return "Selamat Pagi";
+    if (hour < 15) return "Selamat Siang";
+    if (hour < 19) return "Selamat Sore";
+    return "Selamat Malam";
+}
+
+if (toggleBtn) {
+    toggleBtn.addEventListener('click', () => {
+        chatBox.classList.remove('hidden');
+        // Jika chat masih kosong, kasih sapaan otomatis
+        if (chatBody.children.length <= 1) {
+            const greeting = getGreeting();
+            const msg = `Hai, ${greeting} Sayang! ❤️<br>Aku siap bantu kamu nih. Mau ngapain?`;
+            const menu = [
+                { text: "📅 Cek Tanggal", action: "date" },
+                { text: "📝 Cek Tugas", action: "check_tasks" },
+                { text: "➕ Tambah Tugas", action: "add_info" },
+                { text: "💡 Motivasi", action: "quote" },
+                { text: "👤 About Me", action: "about" }
+            ];
+            // Hapus pesan lama biar fresh
+            chatBody.innerHTML = '';
+            addMessage(msg, 'bot', menu);
+        }
+    });
+
+    closeBtn.addEventListener('click', () => chatBox.classList.add('hidden'));
+    sendBtn.addEventListener('click', () => sendMessage());
+    chatInput.addEventListener('keypress', (e) => { if(e.key === 'Enter') sendMessage(); });
+}
+
+function sendMessage() {
+    const text = chatInput.value.trim();
+    if(text === "") return;
+    addMessage(text, 'user');
+    chatInput.value = "";
+    setTimeout(() => { processBotResponse(text); }, 500);
+}
+
+function processBotResponse(input) {
+    const lower = input.toLowerCase();
+    
+    // --- 1. MENU UTAMA ---
+    if (lower.match(/halo|hi|hai|menu|bantuan|help/)) {
+        const greeting = getGreeting();
+        const msg = `${greeting} ganteng! 👇 Pilih menu di bawah ya:`;
+        const options = [
+            { text: "📅 Cek Tanggal", action: "date" },
+            { text: "📝 Cek Tugas", action: "check_tasks" },
+            { text: "➕ Tambah Tugas", action: "add_info" },
+            { text: "💡 Motivasi", action: "quote" },
+            { text: "👤 About Me", action: "about" },
+            { text: "🧹 Hapus Chat", action: "clear" }
+        ];
+        addMessage(msg, 'bot', options);
+        return;
+    }
+
+    // --- 2. CEK TANGGAL ---
+    if (lower.includes('tanggal') || lower.includes('date')) {
+        const now = new Date();
+        const dateStr = now.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+        const timeStr = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+        addMessage(`Sekarang hari <b>${dateStr}</b>, jam <b>${timeStr}</b>.\nJangan lupa sholat ya sayang! 🕌`, 'bot', [{ text: "⬅️ Menu", action: "menu" }]);
+        return;
+    }
+
+    // --- 3. ABOUT ME ---
+    if (lower.includes('about') || lower.includes('siapa') || lower.includes('pembuat')) {
+        addMessage("<b>Tentang Aku:</b><br>Aku adalah AI Assistant 'D-Project' yang dibuat khusus oleh <b>Musa</b> untuk nemenin kamu produktif! Jangan lupa traktir kopi ya! ☕", 'bot', [{ text: "⬅️ Menu", action: "menu" }]);
+        return;
+    }
+
+    // --- 4. CEK TUGAS ---
+    if (lower.includes('tugas') || lower.includes('cek') || lower.includes('check_tasks')) {
+        const tasks = getTasks();
+        const pending = tasks.filter(t => !t.completed);
+        if (pending.length === 0) {
+            addMessage("Wah, kamu rajin banget! Semua tugas udah kelar. Istirahat gih sayang! 🥰", 'bot');
+        } else {
+            let listHtml = "<b>Daftar Tugas Kamu:</b><br>";
+            pending.forEach(t => { listHtml += `• ${t.name} (${t.priority})<br>`; });
+            listHtml += "<br>Semangat ngerjainnya ya!";
+            addMessage(listHtml, 'bot', [{ text: "⬅️ Menu", action: "menu" }]);
+        }
+        return;
+    }
+
+    // --- 5. INFO TAMBAH TUGAS ---
+    if (lower.includes('tambah') || lower.includes('add')) {
+        addMessage("<b>Cara Tambah Tugas:</b><br>1. Lewat Form di Dashboard.<br>2. Lewat Telegram: Chat aja <i>'Ingatin tugas MTK besok jam 8'</i>.<br><br>Gampang kan? 😉", 'bot', [{ text: "Siap!", action: "menu" }]);
+        return;
+    }
+
+    // --- 6. MOTIVASI ---
+    if (lower.includes('motivasi') || lower.includes('quote')) {
+        const quotes = [
+            "Masa depan adalah milik mereka yang menyiapkannya hari ini.",
+            "Jangan bandingkan prosesmu dengan orang lain. Kamu punya zonamu sendiri.",
+            "Lelah itu wajar, berhenti itu jangan! 💪",
+            "Ingat, coding itu 1% ngoding, 99% nyari error di Google. 😂"
+        ];
+        const random = quotes[Math.floor(Math.random() * quotes.length)];
+        addMessage(`✨ <i>"${random}"</i>`, 'bot', [{ text: "Lagi dong", action: "quote" }, { text: "⬅️ Menu", action: "menu" }]);
+        return;
+    }
+
+    // --- 7. CLEAR CHAT ---
+    if (lower.includes('clear') || lower.includes('hapus')) {
+        chatBody.innerHTML = '';
+        const greeting = getGreeting();
+        addMessage(`${greeting} sayang! Chat udah bersih nih. ✨`, 'bot', [{ text: "Menu", action: "menu" }]);
+        return;
+    }
+
+    // DEFAULT
+    addMessage("Maaf sayang, aku gak ngerti maksudnya 🥺. Coba klik menu di bawah ya.", 'bot', [{ text: "Buka Menu", action: "menu" }]);
+}
+
+function addMessage(html, sender, options = []) {
+    const div = document.createElement('div');
+    div.className = `message ${sender}`;
+    let content = `<p>${html}</p>`;
+    if (options.length > 0) {
+        content += `<div class="options">`;
+        options.forEach(opt => { content += `<button onclick="sendOption('${opt.action}')">${opt.text}</button>`; });
+        content += `</div>`;
+    }
+    div.innerHTML = content;
+    chatBody.appendChild(div);
+    chatBody.scrollTop = chatBody.scrollHeight;
+}
+
+function sendOption(action) { processBotResponse(action); }
+
+/* =========================================
+   5. UI TASKS & REMINDER SYSTEM
+========================================= */
 const taskForm = document.getElementById("taskForm");
 if (taskForm) {
     taskForm.addEventListener("submit", function(e) {
@@ -158,39 +358,21 @@ if (taskForm) {
         const name = document.getElementById("taskName").value;
         const date = document.getElementById("taskDate").value;
         const priority = document.getElementById("taskPriority").value;
-
         if(name && date) {
-            addTask(name, date, priority);
+            addTask(name, date, priority, false);
             taskForm.reset();
             document.getElementById("taskPriority").value = "Medium";
-            alert("✅ Tugas dicatat & Disimpan ke Server!");
+            alert("✅ Tugas dicatat!");
         }
     });
 }
-
-let currentFilter = "all";
-function setFilter(filterType) {
-    currentFilter = filterType;
-    document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
-    renderTasks();
-}
-function filterTasks() { renderTasks(); }
 
 function renderTasks() {
     const list = document.getElementById("taskList");
     const empty = document.getElementById("emptyState");
     if (!list) return;
 
-    const search = document.getElementById("searchInput")?.value.toLowerCase() || "";
     let tasks = getTasks();
-
-    tasks = tasks.filter(t => {
-        if (currentFilter === "pending" && t.completed) return false;
-        if (currentFilter === "completed" && !t.completed) return false;
-        if (search && !t.name.toLowerCase().includes(search)) return false;
-        return true;
-    });
-
     tasks.sort((a, b) => new Date(a.date) - new Date(b.date));
     list.innerHTML = "";
 
@@ -204,20 +386,15 @@ function renderTasks() {
             li.setAttribute('data-priority', t.priority);
             
             const dateObj = new Date(t.date);
-            const hasTime = t.date.includes("T") || t.date.length > 10;
-            const dateOptions = { weekday:'short', day:'numeric', month:'short' };
-            if(hasTime) { dateOptions.hour = '2-digit'; dateOptions.minute = '2-digit'; }
-            const dateStr = dateObj.toLocaleDateString("id-ID", dateOptions);
+            const dateStr = dateObj.toLocaleDateString("id-ID", { weekday:'short', day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
 
             li.innerHTML = `
                 <div class="task-info">
                     <span class="task-title" style="font-size:1.1rem; display:block; margin-bottom:4px; font-weight:600;">
-                        ${t.name}
-                        ${t.completed ? '<span class="badge" style="background:#ddd; color:#555; margin-left:5px; font-size:0.6rem">Selesai</span>' : ''}
+                        ${t.name} ${t.completed ? '<span class="badge" style="background:#ddd; color:#555; font-size:0.6rem">Selesai</span>' : ''}
                     </span>
                     <div class="task-meta" style="font-size:0.9rem; color:#666;">
-                        <i class="far fa-calendar"></i> ${dateStr}
-                        <span class="badge badge-${t.priority}" style="margin-left:8px">${t.priority}</span>
+                        <i class="far fa-calendar"></i> ${dateStr} <span class="badge badge-${t.priority}" style="margin-left:8px">${t.priority}</span>
                     </div>
                 </div>
                 <div class="task-actions">
@@ -236,11 +413,7 @@ function toggleTask(id) {
     if (t) { 
         t.completed = !t.completed; 
         saveTasks(tasks); 
-        
-        if(t.completed) {
-            const msg = `✅ <b>YEAY! TUGAS SELESAI!</b>\n\n"${t.name}"\n\nPinter banget sih pacar aku! 😍 Istirahat dulu gih. Muach! 💋`;
-            sendTelegramAlert(msg);
-        }
+        if(t.completed) sendTelegramAlert(`✅ <b>TUGAS SELESAI!</b>\n"${t.name}"\nMantap lur! 🎉`);
     }
 }
 
@@ -259,10 +432,6 @@ function updateProgress() {
     if(txt) txt.innerText = percent + "%";
 }
 
-/* =========================================
-   4. DASHBOARD LOGIC (COUNTDOWN UI)
-   Note: Reminder WA/Telegram sekarang ditangani oleh Google Apps Script
-========================================= */
 function initDashboardTime() {
     const clockEl = document.getElementById("liveClock");
     const dateEl = document.getElementById("liveDate");
@@ -271,37 +440,56 @@ function initDashboardTime() {
     const cdM = document.getElementById("cd-minutes");
     const taskNameEl = document.getElementById("nextTaskName");
 
-    if (!clockEl || !taskNameEl) return;
+    if (!clockEl) return;
 
     function update() {
         const now = new Date();
         clockEl.innerText = now.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
         dateEl.innerText = now.toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
 
-        const tasks = getTasks().filter(t => !t.completed).sort((a, b) => new Date(a.date) - new Date(b.date));
-        
-        if (!tasks.length) {
-            taskNameEl.innerText = "Tidak ada tugas 🎉";
+        let tasks = getTasks();
+        let tasksChanged = false;
+
+        tasks.forEach(t => {
+            if (!t.completed) {
+                let deadline = new Date(t.date);
+                if (t.date.length <= 10) deadline.setHours(23, 59, 59);
+                const diff = deadline - now.getTime();
+
+                // Alert H-1 Jam
+                if (diff > 0 && diff <= 3600000 && !t.notified_urgent) {
+                    sendTelegramAlert(`🚨 <b>DEADLINE MEPET!</b>\n📌 ${t.name}\n⏳ < 1 Jam lagi! Buruan!`);
+                    t.notified_urgent = true;
+                    tasksChanged = true;
+                }
+            }
+        });
+
+        if (tasksChanged) localStorage.setItem("myTasks", JSON.stringify(tasks));
+
+        const activeTasks = tasks.filter(t => !t.completed).sort((a, b) => new Date(a.date) - new Date(b.date));
+        if (!activeTasks.length) {
+            if(taskNameEl) taskNameEl.innerText = "Tidak ada tugas 🎉";
             if(cdD) cdD.textContent = 0; if(cdH) cdH.textContent = 0; if(cdM) cdM.textContent = 0;
             return;
         }
 
-        const next = tasks[0];
-        taskNameEl.innerText = next.name;
+        const next = activeTasks[0];
+        if(taskNameEl) taskNameEl.innerText = next.name;
         
         let nextDeadline = new Date(next.date);
         if (next.date.length <= 10) nextDeadline.setHours(23, 59, 59);
-        const diff = nextDeadline - now;
+        const nextDiff = nextDeadline - now;
 
-        if (diff <= 0) {
-            taskNameEl.innerText = "Telat: " + next.name;
+        if (nextDiff <= 0) {
+            if(taskNameEl) taskNameEl.innerText = "Telat: " + next.name;
             if(cdD) cdD.textContent = 0; if(cdH) cdH.textContent = 0; if(cdM) cdM.textContent = 0;
             return;
         }
 
-        if(cdD) cdD.textContent = Math.floor(diff / 86400000);
-        if(cdH) cdH.textContent = Math.floor((diff / 3600000) % 24);
-        if(cdM) cdM.textContent = Math.floor((diff / 60000) % 60);
+        if(cdD) cdD.textContent = Math.floor(nextDiff / 86400000);
+        if(cdH) cdH.textContent = Math.floor((nextDiff / 3600000) % 24);
+        if(cdM) cdM.textContent = Math.floor((nextDiff / 60000) % 60);
     }
 
     update();
@@ -310,16 +498,8 @@ function initDashboardTime() {
 
 document.addEventListener("DOMContentLoaded", () => {
     if (document.getElementById("liveClock")) initDashboardTime();
+    if (document.getElementById("taskList")) { renderTasks(); updateProgress(); }
     
-    // Inisialisasi Data
-    if (document.getElementById("taskList")) {
-        renderTasks(); 
-        updateProgress();
-        // Tarik data dari Google Sheet saat halaman dibuka
-        syncFromServer();
-    }
-    
-    // 🔥 AUTO SYNC SETIAP 5 DETIK 🔥
-    // Ini biar kalau lu update lewat telegram (HP), di web (Laptop) langsung berubah
-    setInterval(syncFromServer, 5000);
+    // 🔥 PENTING: JALANKAN POLLING 3 DETIK 🔥
+    setInterval(pollTelegramMessages, 3000);
 });

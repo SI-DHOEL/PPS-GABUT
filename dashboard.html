@@ -10,65 +10,120 @@
 <body>
 
 <nav class="dashboard-header">
-    <h3><a href="dashboard.html" style="text-decoration:none;">🚀 MyTracker</a></h3>
-    <span class="logout-btn" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</span>
+    <h3><a href="dashboard.html" style="text-decoration:none; color:inherit;">🚀 MyTracker</a></h3>
+    <span class="logout-btn" onclick="logout()">
+        <i class="fas fa-sign-out-alt"></i> Logout
+    </span>
 </nav>
 
 <div class="dashboard-content">
 
     <section class="hero-section">
         <div class="hero-left">
-            <p style="font-size: 1.2rem; opacity: 0.8; margin-bottom: 5px;">Halo, Semangat Pagi!</p>
-            <h1 id="liveClock" style="letter-spacing: -2px;">00:00</h1>
-            <p id="liveDate" style="font-weight: 600; color: #555;">Memuat tanggal...</p>
+            <p style="font-size: 1.1rem; opacity: 0.9; margin-bottom: 5px;">Halo, Semangat Pagi! 👋</p>
+            <h1 id="liveClock" style="font-size: 3.5rem; letter-spacing: -2px; margin: 0;">00:00</h1>
+            <p id="liveDate" style="font-weight: 500; opacity: 0.8;">Memuat tanggal...</p>
         </div>
 
         <div class="glass-box">
-            <small style="text-transform: uppercase; letter-spacing: 2px; font-size: 0.7rem; opacity: 0.9;">🔥 Next Deadline</small>
-            <h2 id="nextTaskName" style="margin: 15px 0; font-size: 1.4rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 250px;">Cari tugas...</h2>
+            <small style="text-transform: uppercase; letter-spacing: 1px; font-size: 0.7rem; color: #ff6b81; font-weight:bold;">🔥 Deadline Terdekat</small>
+            <h2 id="nextTaskName" style="margin: 10px 0; font-size: 1.3rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 250px;">
+                Santai, aman bos! 🎉
+            </h2>
 
-            <div style="display: flex; justify-content: space-around; gap: 10px;">
-                <div><span id="cd-days" style="font-size:1.5rem; font-weight:700">0</span><br><small>Hari</small></div>
-                <div><span id="cd-hours" style="font-size:1.5rem; font-weight:700">0</span><br><small>Jam</small></div>
-                <div><span id="cd-minutes" style="font-size:1.5rem; font-weight:700">0</span><br><small>Mnt</small></div>
+            <div style="display: flex; justify-content: space-between; gap: 15px; margin-top: 10px;">
+                <div class="cd-item"><span id="cd-days">0</span><small>Hari</small></div>
+                <div class="cd-item"><span id="cd-hours">0</span><small>Jam</small></div>
+                <div class="cd-item"><span id="cd-minutes">0</span><small>Mnt</small></div>
             </div>
         </div>
     </section>
 
-    <h3 style="margin-bottom: 1.5rem; font-weight: 700; color: white; text-shadow: 0 2px 4px rgba(0,0,0,0.1);">Menu Utama</h3>
+    <div style="margin-bottom: 2rem; background: rgba(255,255,255,0.15); padding: 15px; border-radius: 15px; backdrop-filter: blur(5px); border: 1px solid rgba(255,255,255,0.2);">
+        <div style="display:flex; justify-content:space-between; margin-bottom:8px; color:white; font-size:0.9rem;">
+            <span>📈 Produktivitas Hari Ini</span>
+            <span id="progressText" style="font-weight:bold;">0%</span>
+        </div>
+        <div style="background:rgba(255,255,255,0.3); height:8px; border-radius:10px; overflow:hidden;">
+            <div id="progressBar" style="width:0%; height:100%; background:#2ed573; transition:width 0.5s ease;"></div>
+        </div>
+    </div>
+
+    <h3 style="margin-bottom: 1rem; font-weight: 600; color: white; font-size: 1.2rem;">Menu Utama</h3>
 
     <section class="menu-grid">
         <a href="tasks.html" class="menu-card">
-            <i class="fas fa-tasks"></i>
-            <h3>Tugas Saya</h3>
-            <p style="opacity: 0.7; font-size: 0.9rem;">List tugas & deadline</p>
+            <div class="icon-bg" style="background: #eccc68;"><i class="fas fa-tasks" style="color: white;"></i></div>
+            <div class="menu-text">
+                <h3>List Tugas</h3>
+                <p>Kelola deadline & prioritas</p>
+            </div>
         </a>
 
         <a href="calendar.html" class="menu-card">
-            <i class="fas fa-calendar-day"></i>
-            <h3>Kalender</h3>
-            <p style="opacity: 0.7; font-size: 0.9rem;">Agenda bulanan</p>
+            <div class="icon-bg" style="background: #70a1ff;"><i class="fas fa-calendar-alt" style="color: white;"></i></div>
+            <div class="menu-text">
+                <h3>Kalender</h3>
+                <p>Agenda bulan ini</p>
+            </div>
         </a>
 
-        <a href="chatbot.html" class="menu-card">
-            <i class="fas fa-magic"></i>
-            <h3>AI Assistant</h3>
-            <p style="opacity: 0.7; font-size: 0.9rem;">Catat tugas otomatis</p>
+        <a href="#" class="menu-card" onclick="document.getElementById('chat-box').classList.remove('hidden'); return false;">
+            <div class="icon-bg" style="background: #ff4757;"><i class="fas fa-heart" style="color: white;"></i></div>
+            <div class="menu-text">
+                <h3>Tanya Ayang</h3>
+                <p>Asisten pribadi kamu</p>
+            </div>
         </a>
 
         <a href="about.html" class="menu-card">
-            <i class="fas fa-id-card"></i>
-            <h3>Profil</h3>
-            <p style="opacity: 0.7; font-size: 0.9rem;">Tentang pengembang</p>
+            <div class="icon-bg" style="background: #2ed573;"><i class="fas fa-user-circle" style="color: white;"></i></div>
+            <div class="menu-text">
+                <h3>Profil</h3>
+                <p>Info pengembang</p>
+            </div>
         </a>
     </section>
+
+</div>
+
+<div id="chat-widget-container">
+    <button id="chat-toggle-btn">
+        <i class="fas fa-comment-dots"></i> Tanya Ayang
+    </button>
+
+    <div id="chat-box" class="hidden">
+        <div class="chat-header">
+            <span>❤️ Asisten Pribadi</span>
+            <button id="chat-close-btn"><i class="fas fa-times"></i></button>
+        </div>
+        
+        <div id="chat-body">
+            <div class="message bot">
+                <p>Halo sayang! Ada yang bisa aku bantu? 😘</p>
+                <div class="options">
+                    <button onclick="sendOption('menu')">Menu Utama</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="chat-footer">
+            <input type="text" id="chat-input" placeholder="Ketik sesuatu..." autocomplete="off">
+            <button id="chat-send-btn"><i class="fas fa-paper-plane"></i></button>
+        </div>
+    </div>
 </div>
 
 <script src="script.js"></script>
+<script src="chatbot.js"></script>
+
 <script>
-    // Cek Login & Jalanin Jam
-    checkAuth();
-    if (typeof initDashboardTime === "function") initDashboardTime();
+    // Fungsi inisialisasi saat halaman dibuka
+    document.addEventListener("DOMContentLoaded", () => {
+        checkAuth(); // Cek login
+        if (typeof initDashboardTime === "function") initDashboardTime();
+        if (typeof updateProgress === "function") updateProgress();
+    });
 </script>
 
 </body>
